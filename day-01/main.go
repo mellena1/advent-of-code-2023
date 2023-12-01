@@ -22,13 +22,13 @@ func main() {
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		num, err := getNumFromLinePartOne(line)
+		num, err := getNumFromLine(line, false)
 		if err != nil {
 			panic(fmt.Sprintf("unexpected error parsing line p1: %s, err: %s", line, err))
 		}
 		partOneSum += num
 
-		num2, err := getNumFromLinePartTwo(line)
+		num2, err := getNumFromLine(line, true)
 		if err != nil {
 			panic(fmt.Sprintf("unexpected error parsing line p2: %s, err: %s", line, err))
 		}
@@ -43,23 +43,7 @@ func main() {
 	fmt.Printf("Part 2 answer: %d\n", partTwoSum)
 }
 
-func getNumFromLinePartOne(line string) (int, error) {
-	var first rune
-	var last rune
-
-	for _, r := range line {
-		if unicode.IsDigit(r) {
-			if first == 0 {
-				first = r
-			}
-			last = r
-		}
-	}
-
-	return strconv.Atoi(string([]rune{first, last}))
-}
-
-func getNumFromLinePartTwo(line string) (int, error) {
+func getNumFromLine(line string, lookForWords bool) (int, error) {
 	numberMap := map[string]rune{
 		"one":   '1',
 		"two":   '2',
@@ -72,44 +56,36 @@ func getNumFromLinePartTwo(line string) (int, error) {
 		"nine":  '9',
 	}
 
-	var first rune
-	var last rune
+	digits := make([]rune, 2, 2)
 
 	for i, r := range line {
 		if unicode.IsDigit(r) {
-			if first == 0 {
-				first = r
+			if digits[0] == 0 {
+				digits[0] = r
 			}
-			last = r
+			digits[1] = r
 
 			// if this char is a digit, no reason to look for words
 			continue
 		}
 
 		// need at least three letters for a word number
-		if i < 2 {
+		if !lookForWords || i < 2 {
 			continue
 		}
 
-		curWord := ""
-		if i >= 4 {
-			curWord = line[i-4 : i+1]
-		} else {
-			curWord = line[0 : i+1]
-		}
-
-		// starting from the back, look for 3, 4, or 5 letter numbers
+		// starting from the back, look for 3, 4, or 5 letter word numbers
 		// if you find one, use it as the value
-		for j := len(curWord) - 1; j >= 0; j-- {
-			if val, ok := numberMap[curWord[j:]]; ok {
-				if first == 0 {
-					first = val
+		for j := i - 2; j >= 0 && j >= i-4; j-- {
+			if val, ok := numberMap[line[j:i+1]]; ok {
+				if digits[0] == 0 {
+					digits[0] = val
 				}
-				last = val
+				digits[1] = val
 				break
 			}
 		}
 	}
 
-	return strconv.Atoi(string([]rune{first, last}))
+	return strconv.Atoi(string(digits))
 }
