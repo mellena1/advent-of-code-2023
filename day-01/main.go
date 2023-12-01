@@ -9,9 +9,10 @@ import (
 )
 
 func main() {
-	f, err := os.Open("input.txt")
+	f, err := os.Open("input1.txt")
 	if err != nil {
-		panic(fmt.Sprintf("failed to open file: %s", err))
+		fmt.Fprintf(os.Stderr, "failed to open file: %s\n", err)
+		os.Exit(1)
 	}
 	defer f.Close()
 
@@ -24,19 +25,22 @@ func main() {
 
 		num, err := getNumFromLine(line, false)
 		if err != nil {
-			panic(fmt.Sprintf("unexpected error parsing line p1: %s, err: %s", line, err))
+			fmt.Fprintf(os.Stderr, "unexpected error parsing line p1: %s, err: %s\n", line, err)
+			os.Exit(1)
 		}
 		partOneSum += num
 
 		num2, err := getNumFromLine(line, true)
 		if err != nil {
-			panic(fmt.Sprintf("unexpected error parsing line p2: %s, err: %s", line, err))
+			fmt.Fprintf(os.Stderr, "unexpected error parsing line p2: %s, err: %s\n", line, err)
+			os.Exit(1)
 		}
 		partTwoSum += num2
 	}
 
 	if err := scanner.Err(); err != nil {
-		panic(fmt.Sprintf("error reading file: %s", err))
+		fmt.Fprintf(os.Stderr, "error reading file: %s\n", err)
+		os.Exit(1)
 	}
 
 	fmt.Printf("Part 1 answer: %d\n", partOneSum)
