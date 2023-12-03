@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	f, err := os.Open("input1.txt")
+	f, err := os.Open("input.txt")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to open file: %s\n", err)
 		os.Exit(1)
@@ -60,7 +60,7 @@ func getNumFromLine(line string, lookForWords bool) (int, error) {
 		"nine":  '9',
 	}
 
-	digits := make([]rune, 2, 2)
+	digits := make([]rune, 2)
 
 	for i, r := range line {
 		if unicode.IsDigit(r) {
