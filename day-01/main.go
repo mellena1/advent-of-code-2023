@@ -1,47 +1,35 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"strconv"
 	"unicode"
+
+	"github.com/mellena1/advent-of-code-2023/utils"
 )
 
 func main() {
-	f, err := os.Open("input.txt")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to open file: %s\n", err)
-		os.Exit(1)
-	}
+	f := utils.ReadFile("input.txt")
 	defer f.Close()
 
 	partOneSum := 0
 	partTwoSum := 0
 
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := scanner.Text()
-
+	utils.ExecutePerLine(f, func(line string) error {
 		num, err := getNumFromLine(line, false)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "unexpected error parsing line p1: %s, err: %s\n", line, err)
-			os.Exit(1)
+			return fmt.Errorf("unexpected error parsing line p1: %s, err: %s", line, err)
 		}
 		partOneSum += num
 
 		num2, err := getNumFromLine(line, true)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "unexpected error parsing line p2: %s, err: %s\n", line, err)
-			os.Exit(1)
+			return fmt.Errorf("unexpected error parsing line p2: %s, err: %s", line, err)
 		}
 		partTwoSum += num2
-	}
 
-	if err := scanner.Err(); err != nil {
-		fmt.Fprintf(os.Stderr, "error reading file: %s\n", err)
-		os.Exit(1)
-	}
+		return nil
+	})
 
 	fmt.Printf("Part 1 answer: %d\n", partOneSum)
 	fmt.Printf("Part 2 answer: %d\n", partTwoSum)

@@ -1,12 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"os"
 	"strconv"
 	"unicode"
+
+	"github.com/mellena1/advent-of-code-2023/utils"
 )
 
 const (
@@ -17,18 +18,10 @@ const (
 )
 
 func main() {
-	f, err := os.Open("input.txt")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to open file: %s\n", err)
-		os.Exit(1)
-	}
+	f := utils.ReadFile("input.txt")
 	defer f.Close()
 
-	board, err := getBoard(f)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create board: %s\n", err)
-		os.Exit(1)
-	}
+	board := getBoard(f)
 
 	partNums, err := findPartNumbers(board)
 	if err != nil {
@@ -57,13 +50,10 @@ func main() {
 	fmt.Printf("Part two solution: %d\n", partTwoSum)
 }
 
-func getBoard(f io.Reader) ([][]int, error) {
+func getBoard(f io.Reader) [][]int {
 	board := [][]int{}
 
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := scanner.Text()
-
+	utils.ExecutePerLine(f, func(line string) error {
 		newLine := []int{}
 		numBuilder := []rune{}
 
@@ -90,7 +80,7 @@ func getBoard(f io.Reader) ([][]int, error) {
 
 			if len(numBuilder) > 0 {
 				if err := addNumToLine(); err != nil {
-					return nil, err
+					return err
 				}
 			}
 
@@ -107,18 +97,16 @@ func getBoard(f io.Reader) ([][]int, error) {
 		// empty out num if it exists at EOL
 		if len(numBuilder) > 0 {
 			if err := addNumToLine(); err != nil {
-				return nil, err
+				return err
 			}
 		}
 
 		board = append(board, newLine)
-	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading file: %w", err)
-	}
+		return nil
+	})
 
-	return board, nil
+	return board
 }
 
 func findPartNumbers(board [][]int) ([]int, error) {

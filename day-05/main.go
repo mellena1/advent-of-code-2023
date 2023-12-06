@@ -1,30 +1,21 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"math"
-	"os"
 	"slices"
-	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/mellena1/advent-of-code-2023/utils"
 )
 
 func main() {
-	f, err := os.Open("input.txt")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to open file: %s\n", err)
-		os.Exit(1)
-	}
+	f := utils.ReadFile("input.txt")
 	defer f.Close()
 
-	almanac, err := parseAlmanac(f)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to parse almanac: %s\n", err)
-		os.Exit(1)
-	}
+	almanac := parseAlmanac(f)
 
 	partOneAnswer := math.MaxInt
 	for _, seed := range almanac.Seeds {
@@ -86,44 +77,40 @@ func (a *Almanac) GetSeedLocation(seed int) int {
 	return curNum
 }
 
-func parseAlmanac(f io.Reader) (Almanac, error) {
-	scanner := bufio.NewScanner(f)
-
+func parseAlmanac(f io.Reader) Almanac {
 	almanac := Almanac{
 		Maps: []XToYMap{},
 	}
 
-	for scanner.Scan() {
-		line := scanner.Text()
-
+	utils.ExecutePerLine(f, func(line string) error {
 		// ignore blank lines
 		if len(strings.TrimSpace(line)) == 0 {
-			continue
+			return nil
 		}
 
 		// parse the seeds
 		if strings.HasPrefix(line, "seeds: ") {
 			seedsStr, _ := strings.CutPrefix(line, "seeds: ")
 
-			seeds, err := strSliceToIntSlice(strings.Fields(seedsStr))
+			seeds, err := utils.StrSliceToIntSlice(strings.Fields(seedsStr))
 			if err != nil {
-				return Almanac{}, fmt.Errorf("error parsing seeds %q: %w", line, err)
+				return fmt.Errorf("error parsing seeds %q: %w", line, err)
 			}
 
 			almanac.Seeds = seeds
-			continue
+			return nil
 		}
 
 		// start up a new x-to-y map
 		if strings.HasSuffix(line, "map:") {
 			almanac.Maps = append(almanac.Maps, XToYMap{})
-			continue
+			return nil
 		}
 
 		// parse the number lines
-		nums, err := strSliceToIntSlice(strings.Fields(line))
+		nums, err := utils.StrSliceToIntSlice(strings.Fields(line))
 		if err != nil {
-			return Almanac{}, fmt.Errorf("error parsing mapping %q: %w", line, err)
+			return fmt.Errorf("error parsing mapping %q: %w", line, err)
 		}
 
 		curMapIdx := len(almanac.Maps) - 1
@@ -132,23 +119,9 @@ func parseAlmanac(f io.Reader) (Almanac, error) {
 			SourceRangeStart: nums[1],
 			RangeLen:         nums[2],
 		})
-	}
 
-	if err := scanner.Err(); err != nil {
-		return Almanac{}, fmt.Errorf("error reading file: %s", err)
-	}
+		return nil
+	})
 
-	return almanac, nil
-}
-
-func strSliceToIntSlice(strs []string) ([]int, error) {
-	nums := make([]int, len(strs))
-	for i, s := range strs {
-		n, err := strconv.Atoi(s)
-		if err != nil {
-			return nil, err
-		}
-		nums[i] = n
-	}
-	return nums, nil
+	return almanac
 }

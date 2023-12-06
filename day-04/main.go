@@ -1,28 +1,20 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/mellena1/advent-of-code-2023/utils"
 )
 
 func main() {
-	f, err := os.Open("input.txt")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to open file: %s\n", err)
-		os.Exit(1)
-	}
+	f := utils.ReadFile("input.txt")
 	defer f.Close()
 
-	games, err := getGamesFromText(f)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to get games: %s", err)
-		os.Exit(1)
-	}
+	games := getGamesFromText(f)
 
 	partOneSum := 0
 
@@ -35,27 +27,21 @@ func main() {
 	fmt.Printf("Part two sum: %d\n", partTwoSum)
 }
 
-func getGamesFromText(f io.Reader) ([]Game, error) {
-	scanner := bufio.NewScanner(f)
-
+func getGamesFromText(f io.Reader) []Game {
 	games := []Game{}
 
-	for scanner.Scan() {
-		line := scanner.Text()
-
+	utils.ExecutePerLine(f, func(line string) error {
 		game, err := getGameFromLine(line)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get game from line %q: %s", line, err)
+			return fmt.Errorf("failed to get game from line %q: %s", line, err)
 		}
 
 		games = append(games, game)
-	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading file: %s", err)
-	}
+		return nil
+	})
 
-	return games, nil
+	return games
 }
 
 func getGameFromLine(line string) (Game, error) {
@@ -69,12 +55,12 @@ func getGameFromLine(line string) (Game, error) {
 	winningNumsStrs := strings.Fields(splitOnBar[0])
 	playerNumsStrs := strings.Fields(splitOnBar[1])
 
-	winningNums, err := strSliceToIntSlice(winningNumsStrs)
+	winningNums, err := utils.StrSliceToIntSlice(winningNumsStrs)
 	if err != nil {
 		return Game{}, fmt.Errorf("invalid winning nums: %w", err)
 	}
 
-	playerNums, err := strSliceToIntSlice(playerNumsStrs)
+	playerNums, err := utils.StrSliceToIntSlice(playerNumsStrs)
 	if err != nil {
 		return Game{}, fmt.Errorf("invalid player nums: %w", err)
 	}
@@ -164,16 +150,4 @@ func (g *Game) getMatchingNums() int {
 
 	g.matches = matches
 	return matches
-}
-
-func strSliceToIntSlice(strs []string) ([]int, error) {
-	nums := make([]int, len(strs))
-	for i, s := range strs {
-		n, err := strconv.Atoi(s)
-		if err != nil {
-			return nil, err
-		}
-		nums[i] = n
-	}
-	return nums, nil
 }
