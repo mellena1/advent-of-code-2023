@@ -22,11 +22,11 @@ func main() {
 
 type Node struct {
 	attachedNodes []*Node
-	coor          Coordinate
+	coor          utils.Coordinate
 	r             rune
 }
 
-func NewNode(coor Coordinate, r rune) *Node {
+func NewNode(coor utils.Coordinate, r rune) *Node {
 	return &Node{
 		attachedNodes: []*Node{},
 		coor:          coor,
@@ -62,25 +62,13 @@ func (n *Node) furthestFromStart() int {
 	return steps
 }
 
-type Direction Coordinate
+type Direction utils.Coordinate
 
 var (
-	LEFT = Direction{
-		x: -1,
-		y: 0,
-	}
-	RIGHT = Direction{
-		x: 1,
-		y: 0,
-	}
-	UP = Direction{
-		x: 0,
-		y: -1,
-	}
-	DOWN = Direction{
-		x: 0,
-		y: 1,
-	}
+	LEFT  = Direction(utils.NewCoordinate(-1, 0))
+	RIGHT = Direction(utils.NewCoordinate(1, 0))
+	UP    = Direction(utils.NewCoordinate(0, -1))
+	DOWN  = Direction(utils.NewCoordinate(0, 1))
 )
 
 var PossibleNextPipes = map[Direction][]rune{
@@ -100,12 +88,12 @@ var PipeAttachments = map[rune][]Direction{
 	'S': {UP, DOWN, LEFT, RIGHT},
 }
 
-func findLoop(grid Grid, startingLocation Coordinate) *Node {
+func findLoop(grid Grid, startingLocation utils.Coordinate) *Node {
 	sNode := NewNode(startingLocation, grid.get(startingLocation).r)
 	foundLoop := false
 
-	var dfs func(curNode *Node, coor Coordinate, lastCoor Coordinate) bool
-	dfs = func(curNode *Node, coor Coordinate, lastCoor Coordinate) bool {
+	var dfs func(curNode *Node, coor utils.Coordinate, lastCoor utils.Coordinate) bool
+	dfs = func(curNode *Node, coor utils.Coordinate, lastCoor utils.Coordinate) bool {
 		if foundLoop {
 			return false
 		}
@@ -113,16 +101,13 @@ func findLoop(grid Grid, startingLocation Coordinate) *Node {
 		gridNode := grid.get(coor)
 
 		for _, direction := range PipeAttachments[gridNode.r] {
-			newCoor := Coordinate{
-				x: coor.x + direction.x,
-				y: coor.y + direction.y,
-			}
+			newCoor := utils.NewCoordinate(coor.X+direction.X, coor.Y+direction.Y)
 
-			if newCoor.x < 0 || newCoor.x >= len(grid[0]) || newCoor.y < 0 || newCoor.y >= len(grid) {
+			if newCoor.X < 0 || newCoor.X >= len(grid[0]) || newCoor.Y < 0 || newCoor.Y >= len(grid) {
 				// out of bounds
 				continue
 			}
-			if newCoor.x == lastCoor.x && newCoor.y == lastCoor.y {
+			if newCoor.X == lastCoor.X && newCoor.Y == lastCoor.Y {
 				// don't go backwards
 				continue
 			}
@@ -151,7 +136,7 @@ func findLoop(grid Grid, startingLocation Coordinate) *Node {
 		return false
 	}
 
-	dfs(sNode, startingLocation, Coordinate{x: -1, y: -1})
+	dfs(sNode, startingLocation, utils.NewCoordinate(-1, -1))
 
 	sNode.r = findPipeUnderS(sNode)
 
@@ -162,7 +147,7 @@ func findPipeUnderS(sNode *Node) rune {
 	sDirections := []Direction{}
 
 	for _, attachment := range sNode.attachedNodes {
-		dir := sNode.coor.findDirection(attachment.coor)
+		dir := findDirection(sNode.coor, attachment.coor)
 		sDirections = append(sDirections, dir)
 	}
 OUTER:
@@ -188,8 +173,8 @@ func isCorner(r rune) bool {
 
 type Grid [][]GridNode
 
-func (g Grid) get(coor Coordinate) *GridNode {
-	return &g[coor.y][coor.x]
+func (g Grid) get(coor utils.Coordinate) *GridNode {
+	return &g[coor.Y][coor.X]
 }
 
 func (g Grid) markLoopNodes(startNode *Node) {
@@ -236,7 +221,7 @@ func (g Grid) findAreaInsideLoop(startNode *Node) int {
 	lastNode := leftCorner
 	curNode := leftCorner
 	for _, attach := range curNode.attachedNodes {
-		if attach.coor.x > curNode.coor.x {
+		if attach.coor.X > curNode.coor.X {
 			curNode = attach
 			break
 		}
@@ -245,11 +230,8 @@ func (g Grid) findAreaInsideLoop(startNode *Node) int {
 	markNodesAsTouched := func(curNode *Node, dir Direction) {
 		switch dir {
 		case DOWN:
-			for i := curNode.coor.y + 1; i < len(g); i++ {
-				gNode := g.get(Coordinate{
-					x: curNode.coor.x,
-					y: i,
-				})
+			for i := curNode.coor.Y + 1; i < len(g); i++ {
+				gNode := g.get(utils.NewCoordinate(curNode.coor.X, i))
 
 				if gNode.inLoop {
 					break
@@ -258,11 +240,8 @@ func (g Grid) findAreaInsideLoop(startNode *Node) int {
 				gNode.touched.Down = true
 			}
 		case UP:
-			for i := curNode.coor.y - 1; i >= 0; i-- {
-				gNode := g.get(Coordinate{
-					x: curNode.coor.x,
-					y: i,
-				})
+			for i := curNode.coor.Y - 1; i >= 0; i-- {
+				gNode := g.get(utils.NewCoordinate(curNode.coor.X, i))
 
 				if gNode.inLoop {
 					break
@@ -271,11 +250,8 @@ func (g Grid) findAreaInsideLoop(startNode *Node) int {
 				gNode.touched.Up = true
 			}
 		case LEFT:
-			for i := curNode.coor.x - 1; i >= 0; i-- {
-				gNode := g.get(Coordinate{
-					x: i,
-					y: curNode.coor.y,
-				})
+			for i := curNode.coor.X - 1; i >= 0; i-- {
+				gNode := g.get(utils.NewCoordinate(i, curNode.coor.Y))
 
 				if gNode.inLoop {
 					break
@@ -284,11 +260,8 @@ func (g Grid) findAreaInsideLoop(startNode *Node) int {
 				gNode.touched.Left = true
 			}
 		case RIGHT:
-			for i := curNode.coor.x + 1; i < len(g[curNode.coor.y]); i++ {
-				gNode := g.get(Coordinate{
-					x: i,
-					y: curNode.coor.y,
-				})
+			for i := curNode.coor.X + 1; i < len(g[curNode.coor.Y]); i++ {
+				gNode := g.get(utils.NewCoordinate(i, curNode.coor.Y))
 
 				if gNode.inLoop {
 					break
@@ -316,10 +289,7 @@ func (g Grid) findAreaInsideLoop(startNode *Node) int {
 	area := 0
 	for i := 0; i < len(g); i++ {
 		for j := 0; j < len(g[i]); j++ {
-			gNode := g.get(Coordinate{
-				x: j,
-				y: i,
-			})
+			gNode := g.get(utils.NewCoordinate(j, i))
 			if gNode.touched.allTouched() {
 				area++
 			}
@@ -335,12 +305,12 @@ func (g Grid) findTopLeft(loop *Node) *Node {
 			if g[i][j].inLoop {
 				lastNode := loop
 				curNode := loop.attachedNodes[0]
-				if loop.coor.x == j && loop.coor.y == i && isCorner(loop.r) {
+				if loop.coor.X == j && loop.coor.Y == i && isCorner(loop.r) {
 					return loop
 				}
 
 				for lastNode != curNode {
-					if curNode.coor.x == j && curNode.coor.y == i && isCorner(curNode.r) {
+					if curNode.coor.X == j && curNode.coor.Y == i && isCorner(curNode.r) {
 						return curNode
 					}
 
@@ -371,21 +341,16 @@ func (t *TouchedFromDirections) allTouched() bool {
 	return t.Up && t.Down && t.Right && t.Left
 }
 
-type Coordinate struct {
-	x int
-	y int
-}
-
-func (c Coordinate) findDirection(c2 Coordinate) Direction {
+func findDirection(c1, c2 utils.Coordinate) Direction {
 	return Direction{
-		x: c2.x - c.x,
-		y: c2.y - c.y,
+		X: c2.X - c1.X,
+		Y: c2.Y - c1.Y,
 	}
 }
 
-func parseGrid(r io.Reader) (Grid, Coordinate) {
+func parseGrid(r io.Reader) (Grid, utils.Coordinate) {
 	grid := Grid{}
-	var coor Coordinate
+	var coor utils.Coordinate
 
 	y := 0
 	utils.ExecutePerLine(r, func(line string) error {
@@ -396,10 +361,7 @@ func parseGrid(r io.Reader) (Grid, Coordinate) {
 				touched: &TouchedFromDirections{},
 			}
 			if r == 'S' {
-				coor = Coordinate{
-					x: i,
-					y: y,
-				}
+				coor = utils.NewCoordinate(i, y)
 			}
 		}
 		y++
