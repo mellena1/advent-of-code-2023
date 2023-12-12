@@ -237,7 +237,7 @@ func (g Grid) findAreaInsideLoop(startNode *Node) int {
 					break
 				}
 
-				gNode.touched.Down = true
+				gNode.isInLoop = true
 			}
 		case UP:
 			for i := curNode.coor.Y - 1; i >= 0; i-- {
@@ -247,7 +247,7 @@ func (g Grid) findAreaInsideLoop(startNode *Node) int {
 					break
 				}
 
-				gNode.touched.Up = true
+				gNode.isInLoop = true
 			}
 		case LEFT:
 			for i := curNode.coor.X - 1; i >= 0; i-- {
@@ -257,7 +257,7 @@ func (g Grid) findAreaInsideLoop(startNode *Node) int {
 					break
 				}
 
-				gNode.touched.Left = true
+				gNode.isInLoop = true
 			}
 		case RIGHT:
 			for i := curNode.coor.X + 1; i < len(g[curNode.coor.Y]); i++ {
@@ -267,7 +267,7 @@ func (g Grid) findAreaInsideLoop(startNode *Node) int {
 					break
 				}
 
-				gNode.touched.Right = true
+				gNode.isInLoop = true
 			}
 		}
 	}
@@ -290,7 +290,7 @@ func (g Grid) findAreaInsideLoop(startNode *Node) int {
 	for i := 0; i < len(g); i++ {
 		for j := 0; j < len(g[i]); j++ {
 			gNode := g.get(utils.NewCoordinate(j, i))
-			if gNode.touched.allTouched() {
+			if gNode.isInLoop {
 				area++
 			}
 		}
@@ -325,20 +325,9 @@ func (g Grid) findTopLeft(loop *Node) *Node {
 }
 
 type GridNode struct {
-	r       rune
-	touched *TouchedFromDirections
-	inLoop  bool
-}
-
-type TouchedFromDirections struct {
-	Up    bool
-	Down  bool
-	Right bool
-	Left  bool
-}
-
-func (t *TouchedFromDirections) allTouched() bool {
-	return t.Up && t.Down && t.Right && t.Left
+	r        rune
+	isInLoop bool
+	inLoop   bool
 }
 
 func findDirection(c1, c2 utils.Coordinate) Direction {
@@ -357,8 +346,8 @@ func parseGrid(r io.Reader) (Grid, utils.Coordinate) {
 		nodes := make([]GridNode, len(line))
 		for i, r := range line {
 			nodes[i] = GridNode{
-				r:       r,
-				touched: &TouchedFromDirections{},
+				r:        r,
+				isInLoop: false,
 			}
 			if r == 'S' {
 				coor = utils.NewCoordinate(i, y)
