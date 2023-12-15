@@ -1,6 +1,8 @@
 package utils
 
-import "strconv"
+import (
+	"strconv"
+)
 
 func StrSliceToIntSlice(strs []string) ([]int, error) {
 	nums := make([]int, len(strs))
@@ -30,4 +32,12 @@ func SliceMap[T any, U any](s []T, f func(v T) U) []U {
 		newS[i] = f(v)
 	}
 	return newS
+}
+
+func IntSliceSum(s []int) int {
+	sum := 0
+	for _, n := range s {
+		sum += n
+	}
+	return sum
 }
