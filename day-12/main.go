@@ -23,22 +23,20 @@ const (
 )
 
 func main() {
-	f := utils.ReadFile("sample.txt")
+	f := utils.ReadFile("input.txt")
 	defer f.Close()
 
 	lines := parseLines(f)
 	partOne := 0
 	for _, l := range lines {
-		partOne += bruteForceCombos(l.springs, l.groups)
+		partOne += l.PossibleArrangements()
 	}
 	fmt.Printf("Part one solution: %d\n", partOne)
 
-	unfoldedLines := utils.SliceMap(lines, func(v LineOfSprings) LineOfSprings {
-		return v.Unfold()
-	})
 	partTwo := 0
-	for _, l := range unfoldedLines {
-		partTwo += bruteForceCombos(l.springs, l.groups)
+	for _, l := range lines {
+		s := l.Unfold().PossibleArrangements()
+		partTwo += s
 	}
 	fmt.Printf("Part two solution: %d\n", partTwo)
 }
@@ -49,90 +47,7 @@ type LineOfSprings struct {
 }
 
 func (l LineOfSprings) PossibleArrangements() int {
-	// var splitAndCount func(springs []SpringState, groups []int) int
-	// splitAndCount = func(springs []SpringState, groups []int) int {
-	// 	totalArrangements := 1
-
-	// 	subGroups := strings.Split(string(springs), ".")
-	// 	subGroups = utils.SliceFilter(subGroups, func(v string) bool { return v != "" })
-
-	// 	removedOne := true
-	// 	for removedOne {
-	// 		if len(subGroups) == 0 || len(groups) == 0 {
-	// 			fmt.Println(l.springs, l.groups, subGroups, groups)
-	// 		}
-
-	// 		removedOne = false
-	// 		if len(subGroups[0]) == groups[0] {
-	// 			subGroups = subGroups[1:]
-	// 			groups = groups[1:]
-	// 			removedOne = true
-	// 		}
-
-	// 		if len(subGroups) == 0 {
-	// 			break
-	// 		}
-	// 		if len(groups) == 0 {
-	// 			break
-	// 			// fmt.Println(l.springs, subGroups, groups)
-	// 		}
-
-	// 		if len(subGroups[len(subGroups)-1]) == groups[len(groups)-1] {
-	// 			subGroups = subGroups[:len(subGroups)-1]
-	// 			groups = groups[:len(groups)-1]
-	// 			removedOne = true
-	// 		}
-	// 	}
-
-	// 	if len(subGroups) == 0 {
-	// 		return 1
-	// 	}
-
-	// 	if len(subGroups) == len(groups) {
-	// 		for i, subGroup := range subGroups {
-	// 			totalArrangements *= numberOfCombos(groups[i], []SpringState(subGroup))
-	// 		}
-	// 		return totalArrangements
-	// 	}
-
-	// 	return bruteForceCombos([]SpringState(strings.Join(subGroups, ".")), groups)
-
-	// 	// for gIdx, group := range groups {
-	// 	// 	newGroup := []SpringState{}
-
-	// 	// 	if gIdx == len(groups)-1 {
-	// 	// 		newGroup = []SpringState(subGroups[0])
-	// 	// 	} else {
-	// 	// 		for _, r := range subGroups[0] {
-	// 	// 			spring := SpringState(r)
-	// 	// 			newGroup = append(newGroup, spring)
-	// 	// 			if spring == BROKEN {
-	// 	// 				continue
-	// 	// 			}
-	// 	// 			if len(newGroup) >= group+1 {
-	// 	// 				break
-	// 	// 			}
-	// 	// 		}
-	// 	// 		// need an extra spot for the dot to separate
-	// 	// 		newGroup = newGroup[:len(newGroup)-1]
-	// 	// 	}
-
-	// 	// 	totalArrangements *= splitAndCount(newGroup, []int{group})
-	// 	// 	if len(newGroup) == len(subGroups[0]) {
-	// 	// 		subGroups = subGroups[1:]
-	// 	// 	} else {
-	// 	// 		subGroups[0] = subGroups[0][len(newGroup)+1:]
-	// 	// 	}
-	// 	// }
-
-	// 	// if totalArrangements == 0 {
-	// 	// 	return 1
-	// 	// }
-
-	// 	return totalArrangements
-	// }
-
-	return 0
+	return bruteForceCombos(l.springs, l.groups, map[string]int{})
 }
 
 func (l LineOfSprings) Unfold() LineOfSprings {
@@ -176,68 +91,56 @@ func dedupDots(s []SpringState) []SpringState {
 	return []SpringState(newSprings)
 }
 
-func numberOfCombos(needed int, springs []SpringState) int {
-	start := -1
-	end := len(springs)
-
-	for i, spring := range springs {
-		if spring == BROKEN {
-			if i > start {
-				start = i
-			}
-			if i < end {
-				end = i
-			}
-		}
-	}
-
-	// no BROKEN springs found
-	if start == -1 {
-		return len(springs) - needed + 1
-	}
-
-	numOfBROKEN := end - start + 1
-
-	// shrink springs to only possible positions
-	highestPossibleEnd := end + (needed - numOfBROKEN)
-	if highestPossibleEnd < len(springs) {
-		springs = springs[:highestPossibleEnd+1]
-	}
-	lowestPossibleStart := start - (needed - numOfBROKEN)
-	if lowestPossibleStart >= 0 {
-		springs = springs[lowestPossibleStart:]
-	}
-
-	return len(springs) - needed + 1
-}
-
-func springCopyWithChange(springs []SpringState, i int, newVal SpringState) []SpringState {
-	newSprings := make([]SpringState, len(springs))
-	copy(newSprings, springs)
-	newSprings[i] = newVal
-	return newSprings
-}
-
-func bruteForceCombos(springs []SpringState, groups []int) int {
+func bruteForceCombos(springs []SpringState, groups []int, cache map[string]int) int {
 	total := 0
 
-	questionIdx := strings.Index(string(springs), "?")
-	if questionIdx > -1 {
-		total += bruteForceCombos(springCopyWithChange(springs, questionIdx, WORKING), groups)
-		total += bruteForceCombos(springCopyWithChange(springs, questionIdx, BROKEN), groups)
-	} else {
-		springsSplit := strings.Split(string(springs), ".")
-		springsSplit = utils.SliceFilter(springsSplit, func(v string) bool { return v != "" })
-		if len(groups) != len(springsSplit) {
+	cacheKey := fmt.Sprintf("%s|%v", springs, groups)
+
+	if v, ok := cache[cacheKey]; ok {
+		return v
+	}
+
+	if len(springs) == 0 {
+		if len(groups) == 0 {
+			return 1
+		} else {
 			return 0
 		}
-		for i, group := range groups {
-			if len(springsSplit[i]) != group {
+	}
+
+	switch springs[0] {
+	case WORKING:
+		return bruteForceCombos(springs[1:], groups, cache)
+	case BROKEN:
+		if len(groups) == 0 || groups[0] > len(springs) {
+			return 0
+		}
+
+		for i := 1; i < groups[0]; i++ {
+			if springs[i] == WORKING {
 				return 0
 			}
 		}
-		return 1
+
+		if len(springs) > groups[0] {
+			if springs[groups[0]] == BROKEN {
+				return 0
+			}
+			return bruteForceCombos(springs[groups[0]+1:], groups[1:], cache)
+		} else {
+			return bruteForceCombos(springs[groups[0]:], groups[1:], cache)
+		}
+	case QUESTION:
+		springs[0] = WORKING
+		total += bruteForceCombos(springs, groups, cache)
+
+		springs[0] = BROKEN
+		total += bruteForceCombos(springs, groups, cache)
+
+		springs[0] = QUESTION
 	}
+
+	cache[cacheKey] = total
 
 	return total
 }
