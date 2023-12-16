@@ -13,6 +13,10 @@ func NewCoordinate(x int, y int) Coordinate {
 	return Coordinate{X: x, Y: y}
 }
 
+func (c Coordinate) Add(c2 Coordinate) Coordinate {
+	return NewCoordinate(c.X+c2.X, c.Y+c2.Y)
+}
+
 func (c Coordinate) String() string {
 	return fmt.Sprintf("(%d, %d)", c.X, c.Y)
 }
