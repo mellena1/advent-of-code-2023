@@ -17,6 +17,10 @@ func (c Coordinate) Add(c2 Coordinate) Coordinate {
 	return NewCoordinate(c.X+c2.X, c.Y+c2.Y)
 }
 
+func (c Coordinate) Sub(c2 Coordinate) Coordinate {
+	return NewCoordinate(c.X-c2.X, c.Y-c2.Y)
+}
+
 func (c Coordinate) String() string {
 	return fmt.Sprintf("(%d, %d)", c.X, c.Y)
 }
@@ -34,3 +38,12 @@ func (c Coordinate) StepsToCoordinate(c2 Coordinate) int {
 
 	return xDiff + yDiff
 }
+
+type Direction Coordinate
+
+var (
+	UP    = Direction(NewCoordinate(0, -1))
+	DOWN  = Direction(NewCoordinate(0, 1))
+	LEFT  = Direction(NewCoordinate(-1, 0))
+	RIGHT = Direction(NewCoordinate(1, 0))
+)
