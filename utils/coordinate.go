@@ -21,6 +21,10 @@ func (c Coordinate) Sub(c2 Coordinate) Coordinate {
 	return NewCoordinate(c.X-c2.X, c.Y-c2.Y)
 }
 
+func (c Coordinate) MoveDir(dir Direction) Coordinate {
+	return c.Add(Coordinate(dir))
+}
+
 func (c Coordinate) String() string {
 	return fmt.Sprintf("(%d, %d)", c.X, c.Y)
 }
@@ -47,3 +51,17 @@ var (
 	LEFT  = Direction(NewCoordinate(-1, 0))
 	RIGHT = Direction(NewCoordinate(1, 0))
 )
+
+func (d Direction) String() string {
+	switch d {
+	case UP:
+		return "UP"
+	case DOWN:
+		return "DOWN"
+	case LEFT:
+		return "LEFT"
+	case RIGHT:
+		return "RIGHT"
+	}
+	return ""
+}
