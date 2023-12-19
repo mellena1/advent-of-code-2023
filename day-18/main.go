@@ -19,107 +19,44 @@ func main() {
 	defer f.Close()
 
 	steps := parseDigInput(f)
-	grid := steps.getGrid()
-	// fmt.Println(grid.polyCorners)
-	// fmt.Println(grid)
-	grid.FillIn()
-	// fmt.Println(grid)
-	fmt.Println(steps.Area())
-}
+	fmt.Printf("Part one solution: %d\n", steps.AreaWithShoelace())
 
-type Polygon []utils.Coordinate
-
-func (pg Polygon) PointIsInside(c utils.Coordinate) bool {
-	// https://github.com/soniakeys/raycast/blob/master/raycast.go
-	if len(pg) < 3 {
-		return false
-	}
-
-	a := pg[0]
-	in := rayIntersectsSegment(c, pg[len(pg)-1], a)
-	for _, b := range pg[1:] {
-		if rayIntersectsSegment(c, a, b) {
-			in = !in
-		}
-		a = b
-	}
-
-	return in
+	partTwoSteps := DigSteps(utils.SliceMap(steps, func(s DigStep) DigStep {
+		return s.PartTwoStep()
+	}))
+	fmt.Printf("Part two solution: %d\n", partTwoSteps.AreaWithShoelace())
 }
 
 type Grid struct {
-	grid        [][]utils.Char
-	polyCorners Polygon
+	rowLen      int
+	colLen      int
+	polyCorners []utils.Coordinate
 }
 
-func NewGrid(initGrid [][]utils.Char) Grid {
+func NewGrid() Grid {
 	return Grid{
-		grid:        initGrid,
+		rowLen:      1,
+		colLen:      1,
 		polyCorners: []utils.Coordinate{},
 	}
 }
 
 func (g *Grid) AddRow(idx int) {
-	numCols := len(g.grid[0])
-	newRow := make([]utils.Char, numCols)
-	for i := range newRow {
-		newRow[i] = NOTHING
-	}
-
 	if idx == -1 {
-		g.grid = append([][]utils.Char{newRow}, g.grid...)
-
 		for i, corner := range g.polyCorners {
 			g.polyCorners[i] = corner.MoveDir(utils.DOWN)
 		}
-	} else {
-		g.grid = append(g.grid, newRow)
 	}
+	g.rowLen++
 }
 
 func (g *Grid) AddCol(idx int) {
 	if idx == -1 {
-		for i, row := range g.grid {
-			g.grid[i] = append([]utils.Char{NOTHING}, row...)
-		}
-
 		for i, corner := range g.polyCorners {
 			g.polyCorners[i] = corner.MoveDir(utils.RIGHT)
 		}
-	} else {
-		for i, row := range g.grid {
-			g.grid[i] = append(row, NOTHING)
-		}
 	}
-}
-
-func (g *Grid) Set(coor utils.Coordinate, v utils.Char) {
-	g.grid[coor.Y][coor.X] = v
-}
-
-func (g *Grid) FillIn() {
-	for i, row := range g.grid {
-		for j, v := range row {
-			if v == TRENCH {
-				continue
-			}
-			coor := utils.NewCoordinate(j, i)
-			if g.polyCorners.PointIsInside(coor) {
-				g.Set(coor, TRENCH)
-			}
-		}
-	}
-}
-
-func (g Grid) String() string {
-	s := ""
-	for _, row := range g.grid {
-		for _, v := range row {
-			s += string(v)
-		}
-		s += "\n"
-	}
-	return s
+	g.colLen++
 }
 
 type DigStep struct {
@@ -128,10 +65,32 @@ type DigStep struct {
 	Color    string
 }
 
+func (step DigStep) PartTwoStep() DigStep {
+	var dir utils.Direction
+	switch step.Color[5] {
+	case '0':
+		dir = utils.RIGHT
+	case '1':
+		dir = utils.DOWN
+	case '2':
+		dir = utils.LEFT
+	case '3':
+		dir = utils.UP
+	}
+
+	numToDig, _ := strconv.ParseInt(step.Color[:5], 16, 0)
+
+	return DigStep{
+		Dir:      dir,
+		NumToDig: int(numToDig),
+		Color:    step.Color,
+	}
+}
+
 type DigSteps []DigStep
 
 func (steps DigSteps) getGrid() Grid {
-	grid := NewGrid([][]utils.Char{{TRENCH}})
+	grid := NewGrid()
 
 	coor := utils.NewCoordinate(0, 0)
 	grid.polyCorners = append(grid.polyCorners, coor)
@@ -141,7 +100,7 @@ func (steps DigSteps) getGrid() Grid {
 			coor = coor.MoveDir(step.Dir)
 			switch step.Dir {
 			case utils.RIGHT:
-				if coor.X >= len(grid.grid[coor.Y]) {
+				if coor.X >= grid.colLen {
 					grid.AddCol(coor.X)
 				}
 			case utils.LEFT:
@@ -151,7 +110,7 @@ func (steps DigSteps) getGrid() Grid {
 					coor = coor.MoveDir(utils.RIGHT)
 				}
 			case utils.DOWN:
-				if coor.Y >= len(grid.grid) {
+				if coor.Y >= grid.rowLen {
 					grid.AddRow(coor.Y)
 				}
 			case utils.UP:
@@ -161,7 +120,6 @@ func (steps DigSteps) getGrid() Grid {
 					coor = coor.MoveDir(utils.DOWN)
 				}
 			}
-			grid.Set(coor, TRENCH)
 		}
 		if stepIdx < len(steps)-1 {
 			grid.polyCorners = append(grid.polyCorners, coor)
@@ -171,20 +129,40 @@ func (steps DigSteps) getGrid() Grid {
 	return grid
 }
 
-func (s DigSteps) Area() int {
-	grid := s.getGrid()
-	grid.FillIn()
+func (s DigSteps) AreaWithShoelace() int {
+	// https://en.wikipedia.org/wiki/Shoelace_formula
 
-	sum := 0
-	for _, row := range grid.grid {
-		for _, v := range row {
-			if v == TRENCH {
-				sum++
-			}
-		}
+	grid := s.getGrid()
+
+	area := 0
+	perimeter := 0
+
+	addPerim := func(c1, c2 utils.Coordinate) {
+		diff := c1.Sub(c2)
+		// this ignores any change in the perim if it's negative (i.e. going left or up),
+		// but it works somehow and I have no idea why
+		perimeter += max(diff.X, diff.Y)
 	}
 
-	return sum
+	addArea := func(c1, c2 utils.Coordinate) {
+		area += (c2.X * c1.Y) - (c1.X * c2.Y)
+	}
+
+	firstCoor := grid.polyCorners[0]
+	lastCoor := firstCoor
+	for _, coor := range grid.polyCorners[1:] {
+		addPerim(coor, lastCoor)
+		addArea(coor, lastCoor)
+		lastCoor = coor
+	}
+
+	// do last section from lastCoor to first since it needs to loop back to the beginning
+	addArea(firstCoor, lastCoor)
+	area /= 2 // need to divide by 2 at the end of the shoelace formula
+	addPerim(firstCoor, lastCoor)
+
+	// my answers somehow ended always off by one, so add one lol
+	return area + perimeter + 1
 }
 
 func parseDigInput(r io.Reader) DigSteps {
@@ -215,9 +193,4 @@ func parseDigInput(r io.Reader) DigSteps {
 	})
 
 	return steps
-}
-
-func rayIntersectsSegment(p, a, b utils.Coordinate) bool {
-	return (a.Y > p.Y) != (b.Y > p.Y) &&
-		p.X < (b.X-a.X)*(p.Y-a.Y)/(b.Y-a.Y)+a.X
 }
