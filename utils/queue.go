@@ -99,7 +99,13 @@ func (pq *PriorityQueue[K, P]) Init(vals map[K]P) {
 }
 
 func (pq *PriorityQueue[K, P]) Update(v K, priority P) {
-	i := pq.hpq.idxMap[v]
+	i, ok := pq.hpq.idxMap[v]
+
+	if !ok {
+		pq.Push(v, priority)
+		return
+	}
+
 	pq.hpq.items[i].priority = priority
 	heap.Fix(pq.hpq, i)
 }
