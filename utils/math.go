@@ -42,3 +42,20 @@ func PrimeFactorization(num int) []int {
 
 	return primeFactors
 }
+
+func NevilleInterpolation(xs []int, ys []int, x int) int {
+	n := len(ys)
+	p := make([]float64, n)
+
+	for k := 0; k < n; k++ {
+		for i := 0; i < n-k; i++ {
+			if k == 0 {
+				p[i] = float64(ys[i])
+			} else {
+				p[i] = (float64(x-xs[i]-k)*p[i] + float64(xs[i]-x)*p[i+1]) / float64(-k)
+			}
+		}
+	}
+
+	return int(p[0])
+}

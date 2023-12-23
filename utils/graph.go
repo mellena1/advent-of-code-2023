@@ -2,7 +2,6 @@ package utils
 
 import (
 	"math"
-	"slices"
 )
 
 type ConnectionMap[K comparable] map[K]map[K]int
@@ -49,17 +48,11 @@ func (cMap ConnectionMap[K]) DijkstraWithDest(source K, destination K) int {
 		pq.Push(vertex, distance)
 	}
 
-	path := []K{}
-
 	for pq.Len() > 0 {
 		curNode, curNodeDist := pq.Pop()
 
 		if curNode == destination {
-			node := curNode
-			for node != source {
-				path = append(path, node)
-				node = prev[node]
-			}
+			break
 		}
 
 		for neighbor, dist := range cMap[curNode] {
@@ -71,10 +64,6 @@ func (cMap ConnectionMap[K]) DijkstraWithDest(source K, destination K) int {
 			}
 		}
 	}
-
-	path = append(path, source)
-
-	slices.Reverse(path)
 
 	return distances[destination]
 }

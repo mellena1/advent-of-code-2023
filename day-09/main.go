@@ -38,20 +38,11 @@ func (o OasisReading) GetPrevNumber() int {
 }
 
 func (o OasisReading) nevilleInterpolation(x int) int {
-	n := len(o)
-	p := make([]float64, n)
-
-	for k := 0; k < n; k++ {
-		for i := 0; i < n-k; i++ {
-			if k == 0 {
-				p[i] = float64(o[i])
-			} else {
-				p[i] = (float64(x-i-k)*p[i] + float64(i-x)*p[i+1]) / float64(-k)
-			}
-		}
+	xs := make([]int, len(o))
+	for i := range o {
+		xs[i] = i
 	}
-
-	return int(p[0])
+	return utils.NevilleInterpolation(xs, o, x)
 }
 
 func parseOasis(r io.Reader) []OasisReading {
