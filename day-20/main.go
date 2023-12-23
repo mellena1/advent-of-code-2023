@@ -44,7 +44,7 @@ func (m ModulesMap) copy() ModulesMap {
 
 // //nolint:golint,unused
 func (m ModulesMap) graphViz() string {
-	s := ""
+	s := "digraph {\n"
 
 	for mName, mod := range m {
 		for _, o := range mod.Outputs() {
@@ -52,7 +52,7 @@ func (m ModulesMap) graphViz() string {
 		}
 	}
 
-	return s
+	return s + "\n}"
 }
 
 func parseModules(r io.Reader) ModulesMap {
