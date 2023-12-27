@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"slices"
 	"strings"
@@ -22,46 +23,66 @@ func main() {
 
 	bricks := parseBricks(f)
 	bricks.MoveAllDown()
+	fmt.Printf("Part one solution: %d\n", bricks.NumCanBeDisintegrated())
+	fmt.Printf("Part two solution: %d\n", bricks.NumBricksThatWouldFall())
 }
 
 type Bricks []Brick
 
-func (b Bricks) MoveAllDown() {
+func (b Bricks) NumCanBeDisintegrated() int {
+	num := 0
+	bricksWithoutI := make(Bricks, len(b)-1)
+
+	for i := range b {
+		copy(bricksWithoutI[:i], b[:i])
+		copy(bricksWithoutI[i:], b[i+1:])
+
+		canBeRemoved := true
+		for _, brick := range bricksWithoutI {
+			if brick.CanMoveDown(bricksWithoutI) {
+				canBeRemoved = false
+				break
+			}
+		}
+		if canBeRemoved {
+			num++
+		}
+	}
+	return num
+}
+
+func (b Bricks) NumBricksThatWouldFall() int {
+	num := 0
+	bricksWithoutI := make(Bricks, len(b)-1)
+
+	for i := range b {
+		copy(bricksWithoutI[:i], b[:i])
+		copy(bricksWithoutI[i:], b[i+1:])
+
+		num += bricksWithoutI.MoveAllDown()
+	}
+	return num
+}
+
+func (b Bricks) MoveAllDown() int {
 	slices.SortFunc(b, func(a, b Brick) int {
 		return a.Start.Z - b.Start.Z
 	})
 
+	numMovedDown := 0
 	for i, brick := range b {
-		for {
+		countedMove := false
+		for brick.CanMoveDown(b) {
 			brick = brick.Add(ZAxis, -1)
-
-			if brick.Start.Z < 1 {
-				break
-			}
-
-			noIntersections := true
-			brick.ForEachCoor(func(c utils.Coordinate3D) bool {
-				for j, otherBrick := range b {
-					if i == j {
-						continue
-					}
-
-					if otherBrick.Intersects(c) {
-						noIntersections = false
-						return true
-					}
-				}
-
-				return false
-			})
-
-			if !noIntersections {
-				break
-			}
-
 			b[i] = brick
+			if !countedMove {
+				numMovedDown++
+				countedMove = true
+			}
 		}
 	}
+
+	return numMovedDown
 }
 
 type Brick struct {
@@ -93,6 +114,9 @@ func (b Brick) ForEachCoor(f func(c utils.Coordinate3D) bool) {
 				return
 			}
 		}
+	default:
+		// case where the block is 1x1
+		f(b.Start)
 	}
 }
 
@@ -117,15 +141,33 @@ func (b Brick) Add(axis Axis, num int) Brick {
 }
 
 func (b Brick) Intersects(c utils.Coordinate3D) bool {
-	switch b.Axis {
-	case XAxis:
-		return c.Y == b.Start.Y && c.Z == b.Start.Z && c.X >= b.Start.X && c.X <= b.End.X
-	case YAxis:
-		return c.X == b.Start.X && c.Z == b.Start.Z && c.Y >= b.Start.Y && c.Y <= b.End.Y
-	case ZAxis:
-		return c.X == b.Start.X && c.Y == b.Start.Y && c.Z >= b.Start.Z && c.Z <= b.End.Z
+	return c.X >= b.Start.X && c.X <= b.End.X && c.Y >= b.Start.Y && c.Y <= b.End.Y && c.Z >= b.Start.Z && c.Z <= b.End.Z
+}
+
+func (b Brick) CanMoveDown(bricks Bricks) bool {
+	movedBrick := b.Add(ZAxis, -1)
+
+	if movedBrick.Start.Z < 1 {
+		return false
 	}
-	return false
+
+	noIntersections := true
+	movedBrick.ForEachCoor(func(c utils.Coordinate3D) bool {
+		for _, otherBrick := range bricks {
+			if otherBrick == b {
+				continue
+			}
+
+			if otherBrick.Intersects(c) {
+				noIntersections = false
+				return true
+			}
+		}
+
+		return false
+	})
+
+	return noIntersections
 }
 
 func parseBricks(r io.Reader) Bricks {
