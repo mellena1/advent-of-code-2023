@@ -65,3 +65,25 @@ func (d Direction) String() string {
 	}
 	return ""
 }
+
+type Coordinate3D struct {
+	X int
+	Y int
+	Z int
+}
+
+func NewCoordinate3D(x, y, z int) Coordinate3D {
+	return Coordinate3D{
+		X: x,
+		Y: y,
+		Z: z,
+	}
+}
+
+func (c Coordinate3D) Translate(x, y, z int) Coordinate3D {
+	return NewCoordinate3D(c.X+x, c.Y+y, c.Z+z)
+}
+
+func (c Coordinate3D) String() string {
+	return fmt.Sprintf("(%d, %d, %d)", c.X, c.Y, c.Z)
+}
