@@ -32,35 +32,80 @@ func main() {
 
 	grid.removeSlopes()
 	cMapP2 := grid.toConnectionMap()
+	cMapP2 = dedupConnectionMap(cMapP2, startCoor)
 	fmt.Printf("Part two solution: %d\n", LongestPath(cMapP2, startCoor, destCoor))
 }
 
-type Grid [][]utils.Char
-
 func LongestPath(cMap utils.ConnectionMap[utils.Coordinate], source, dest utils.Coordinate) int {
 	longestPath := 0
-	var dfs func(curNode utils.Coordinate, visited []utils.Coordinate)
-	dfs = func(curNode utils.Coordinate, visited []utils.Coordinate) {
+	var dfs func(curNode utils.Coordinate, visited []utils.Coordinate, steps int)
+	dfs = func(curNode utils.Coordinate, visited []utils.Coordinate, steps int) {
 		if curNode == dest {
-			if len(visited) > longestPath {
-				fmt.Println(len(visited))
-				longestPath = len(visited)
+			if steps > longestPath {
+				longestPath = steps
 			}
 			return
 		}
-		for neighbor := range cMap[curNode] {
+		for neighbor, dist := range cMap[curNode] {
 			if slices.Contains(visited, neighbor) {
 				continue
 			}
 
-			dfs(neighbor, append(visited, curNode))
+			dfs(neighbor, append(visited, curNode), steps+dist)
 		}
 	}
 
-	dfs(source, []utils.Coordinate{})
+	dfs(source, []utils.Coordinate{}, 0)
 
 	return longestPath
 }
+
+func dedupConnectionMap[K comparable](cMap utils.ConnectionMap[K], start K) utils.ConnectionMap[K] {
+	intersections := []K{}
+
+	for k, v := range cMap {
+		if len(v) >= 3 {
+			intersections = append(intersections, k)
+		}
+	}
+
+	var findNextIntersection func(curNode K, prev K, numSteps int) (K, int)
+	findNextIntersection = func(curNode, prev K, numSteps int) (K, int) {
+		if len(cMap[curNode]) != 2 {
+			return curNode, numSteps
+		}
+
+		var next K
+		for neighbor := range cMap[curNode] {
+			if neighbor == prev {
+				continue
+			}
+			next = neighbor
+			break
+		}
+		return findNextIntersection(next, curNode, numSteps+1)
+	}
+
+	newCMap := utils.ConnectionMap[K]{}
+	for _, node := range intersections {
+		newCMap[node] = map[K]int{}
+
+		for neighbor := range cMap[node] {
+			next, steps := findNextIntersection(neighbor, node, 1)
+			newCMap[node][next] = steps
+
+			if _, ok := newCMap[next]; !ok {
+				newCMap[next] = map[K]int{}
+			}
+			newCMap[next][node] = steps
+		}
+	}
+
+	fmt.Println(newCMap)
+	return newCMap
+}
+
+type Grid [][]utils.Char
 
 func (g Grid) String() string {
 	s := ""
