@@ -86,12 +86,12 @@ func (b Bricks) MoveAllDown() int {
 }
 
 type Brick struct {
-	Start utils.Coordinate3D
-	End   utils.Coordinate3D
+	Start utils.Coordinate3D[int]
+	End   utils.Coordinate3D[int]
 	Axis  Axis
 }
 
-func (b Brick) ForEachCoor(f func(c utils.Coordinate3D) bool) {
+func (b Brick) ForEachCoor(f func(c utils.Coordinate3D[int]) bool) {
 	switch b.Axis {
 	case XAxis:
 		for x := b.Start.X; x <= b.End.X; x++ {
@@ -140,7 +140,7 @@ func (b Brick) Add(axis Axis, num int) Brick {
 	return newBrick
 }
 
-func (b Brick) Intersects(c utils.Coordinate3D) bool {
+func (b Brick) Intersects(c utils.Coordinate3D[int]) bool {
 	return c.X >= b.Start.X && c.X <= b.End.X && c.Y >= b.Start.Y && c.Y <= b.End.Y && c.Z >= b.Start.Z && c.Z <= b.End.Z
 }
 
@@ -152,7 +152,7 @@ func (b Brick) CanMoveDown(bricks Bricks) bool {
 	}
 
 	noIntersections := true
-	movedBrick.ForEachCoor(func(c utils.Coordinate3D) bool {
+	movedBrick.ForEachCoor(func(c utils.Coordinate3D[int]) bool {
 		for _, otherBrick := range bricks {
 			if otherBrick == b {
 				continue
@@ -208,10 +208,10 @@ func parseBricks(r io.Reader) Bricks {
 	return bricks
 }
 
-func strCoorTo3DCoor(s string) (utils.Coordinate3D, error) {
+func strCoorTo3DCoor(s string) (utils.Coordinate3D[int], error) {
 	nums, err := utils.StrSliceToIntSlice(strings.Split(s, ","))
 	if err != nil {
-		return utils.Coordinate3D{}, err
+		return utils.Coordinate3D[int]{}, err
 	}
 
 	return utils.NewCoordinate3D(nums[0], nums[1], nums[2]), nil

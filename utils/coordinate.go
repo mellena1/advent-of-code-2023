@@ -66,24 +66,28 @@ func (d Direction) String() string {
 	return ""
 }
 
-type Coordinate3D struct {
-	X int
-	Y int
-	Z int
+type Number interface {
+	int | float64
 }
 
-func NewCoordinate3D(x, y, z int) Coordinate3D {
-	return Coordinate3D{
+type Coordinate3D[T Number] struct {
+	X T
+	Y T
+	Z T
+}
+
+func NewCoordinate3D[T Number](x, y, z T) Coordinate3D[T] {
+	return Coordinate3D[T]{
 		X: x,
 		Y: y,
 		Z: z,
 	}
 }
 
-func (c Coordinate3D) Translate(x, y, z int) Coordinate3D {
+func (c Coordinate3D[T]) Translate(x, y, z T) Coordinate3D[T] {
 	return NewCoordinate3D(c.X+x, c.Y+y, c.Z+z)
 }
 
-func (c Coordinate3D) String() string {
-	return fmt.Sprintf("(%d, %d, %d)", c.X, c.Y, c.Z)
+func (c Coordinate3D[T]) String() string {
+	return fmt.Sprintf("(%v, %v, %v)", c.X, c.Y, c.Z)
 }
