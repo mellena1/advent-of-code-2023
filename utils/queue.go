@@ -17,8 +17,9 @@ type item[K comparable, P cmp.Ordered] struct {
 }
 
 type heapPriorityQueue[K comparable, P cmp.Ordered] struct {
-	items  []*item[K, P]
-	idxMap map[K]int
+	items        []*item[K, P]
+	idxMap       map[K]int
+	inverseOrder bool
 }
 
 func newHeapPriorityQueue[K comparable, P cmp.Ordered]() *heapPriorityQueue[K, P] {
@@ -33,6 +34,9 @@ func (hpq heapPriorityQueue[_, _]) Len() int {
 }
 
 func (hpq heapPriorityQueue[_, _]) Less(i, j int) bool {
+	if hpq.inverseOrder {
+		return hpq.items[i].priority > hpq.items[j].priority
+	}
 	return hpq.items[i].priority < hpq.items[j].priority
 }
 
@@ -73,6 +77,10 @@ func NewPriorityQueue[K comparable, P cmp.Ordered]() *PriorityQueue[K, P] {
 	return &PriorityQueue[K, P]{
 		hpq: newHeapPriorityQueue[K, P](),
 	}
+}
+
+func (pq *PriorityQueue[K, P]) SetPriorityOrder(inverseOrder bool) {
+	pq.hpq.inverseOrder = inverseOrder
 }
 
 func (pq *PriorityQueue[_, _]) Len() int {
