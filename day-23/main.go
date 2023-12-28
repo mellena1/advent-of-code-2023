@@ -101,7 +101,6 @@ func dedupConnectionMap[K comparable](cMap utils.ConnectionMap[K], start K) util
 		}
 	}
 
-	fmt.Println(newCMap)
 	return newCMap
 }
 
