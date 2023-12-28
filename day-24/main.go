@@ -98,6 +98,7 @@ func posOrVelToInts(s string) ([]int, error) {
 }
 
 func intersectionOf2DVectors(p1 []int, v1 []int, p2 []int, v2 []int) (float64, float64, bool) {
+	// https://math.stackexchange.com/a/406895
 	c := []int{p2[0] - p1[0], p2[1] - p1[1]}
 
 	dt := float64(c[1]*v2[0] - c[0]*v2[1])
