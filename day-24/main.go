@@ -15,7 +15,7 @@ func main() {
 	defer f.Close()
 
 	hailstones := parseHailstones(f)
-	fmt.Printf("Part one solution: %d\n", hailstones.NumIntersections2D(200000000000000, maxPos400000000000000))
+	fmt.Printf("Part one solution: %d\n", hailstones.NumIntersections2D(200000000000000, 400000000000000))
 
 	threeHailstones, err := findThreeHailstones(hailstones)
 	if err != nil {
