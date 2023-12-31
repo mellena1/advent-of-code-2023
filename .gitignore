@@ -22,3 +22,6 @@ go.work
 
 input.txt
 sample*.txt
+
+*.dot
+*.svg

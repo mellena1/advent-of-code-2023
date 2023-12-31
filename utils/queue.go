@@ -10,6 +10,34 @@ var (
 	ErrKeyAlreadyExists = errors.New("key already exists")
 )
 
+type Queue[T any] struct {
+	data []T
+}
+
+func NewQueue[T any]() *Queue[T] {
+	return &Queue[T]{
+		data: []T{},
+	}
+}
+
+func (q *Queue[T]) Push(v T) {
+	q.data = append(q.data, v)
+}
+
+func (q *Queue[T]) Pop() T {
+	if q.Len() == 0 {
+		panic("queue empty")
+	}
+
+	v := q.data[0]
+	q.data = q.data[1:]
+	return v
+}
+
+func (q *Queue[T]) Len() int {
+	return len(q.data)
+}
+
 type item[K comparable, P cmp.Ordered] struct {
 	value    K
 	priority P
